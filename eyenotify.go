@@ -35,6 +35,10 @@ var (
 	command string
 	ext string
 	pid int
+	polling bool
+	lastEvent *inotifyEvent
+	pollList map[string] polledFile
+	ignoreDir map[string]bool
 )
 
 func init() {
