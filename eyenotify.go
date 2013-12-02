@@ -42,10 +42,14 @@ var (
 )
 
 func init() {
-	flag.StringVar(&path, "path", ".", "path to be watched")
+	flag.StringVar(&path, "watch", ".", "path to be watched")
 	flag.StringVar(&command, "command", "echo", "path to be watched")
 	flag.StringVar(&ext, "ext", "go", "extension to be watched")
+	flag.BoolVar(&polling, "polling", false, "use polling")
+	flag.BoolVar(&polling, "p", false, "use polling")
 	flag.Parse()
+	ignoreDir := make(map[string]bool,256)
+	ignoreDir[".git"] = true 
 }
 
 func intFromByte(byteSlice []byte, data interface{} ) {
