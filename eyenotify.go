@@ -25,6 +25,11 @@ type inotifyEvent struct {
 	name string
 }
 
+type polledFile struct {
+	path string
+	modTime time.Time
+}
+
 var (
 	path string
 	command string
