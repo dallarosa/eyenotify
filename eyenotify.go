@@ -204,15 +204,18 @@ func runPolling() {
 	pollList = make(map[string] polledFile)
 	addFilesToPoll(path)
 	for{
-		for file,modTime := range pollList {
-			fileInfo, err := os.Stat(file)
+		for path,pollFile := range pollList {
+			fileInfo, err := os.Stat(path)
 			if err != nil {
 				log.Fatal("Stat error: ", err)
 			}
-			pollList[file] = polledFile{path: file, modTime:fileInfo.ModTime()}
-			log.Print(file, " - ",  modTime)
+			if pollFile.modTime.Before(fileInfo.ModTime()) {
+				log.Print(path, " was modified")
+			}
+			pollList[path] = polledFile{path: path, modTime:fileInfo.ModTime()}
+//			log.Print(file, " - ",  modTime)
 		}
-		time.Sleep(500*time.Millisecond)
+		time.Sleep(200*time.Millisecond)
 	}	
 }
 
