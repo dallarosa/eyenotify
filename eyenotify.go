@@ -72,9 +72,28 @@ func runApp() {
 	pid = cmd.Process.Pid
 }
 
+func restartProc() {
+	log.Print("Killing Process:  ",pid)
+	if proc, err := os.FindProcess(pid); err != nil {
+		log.Print("error: ",err)
+		runApp()
+	}else{
+		err := proc.Kill()
+		if err != nil {
+			log.Print("error: ", err)
+		}
+		_, err = proc.Wait()
+		if err != nil {
+			log.Print("error: ", err)
+		}
+		runApp()
+	}
+}
+
+//vim test: 
+
 func processBuffer(n int, buffer []byte) {
 	event := new(inotifyEvent)
-	defer func() { lastEvent = event }()
 	var  i int32
 
 	for i < int32(n) {
@@ -86,31 +105,24 @@ func processBuffer(n int, buffer []byte) {
 		event.name = strings.TrimRight(event.name, "\x00")
 		i += EVENT_SIZE + event.length
 
-//		log.Print(event)
-//		continue
-
 		if(len(strings.Split(event.name,".")) > 1) {
 			eventExt := strings.Split(event.name,".")[1]
+			log.Print(ext, " - ", eventExt)
 			if(ext == eventExt){
-				if lastEvent != nil && lastEvent.name == event.name && lastEvent.mask == 0x100 && event.mask == 0x2 {
+				log.Print("I entered the if")
+				if lastEvent != nil {
+					log.Print(event.name, " - ", lastEvent.name)
+					log.Print(event.mask, " - ", lastEvent.mask)
+				}else {
+					log.Print(event.name)
+					log.Print(event.mask)
+				}
+				if lastEvent != nil && lastEvent.name == event.name && lastEvent.mask == syscall.IN_DELETE && event.mask == syscall.IN_CLOSE_WRITE{
 					log.Print("Skipping as we already processed events for file: ", event.name)
 					break
 				}
-				log.Print("Killing Process:  ",pid)
-				if proc, err := os.FindProcess(pid); err != nil {
-					log.Print("error: ",err)
-					runApp()
-				}else{
-					err := proc.Kill()
-					if err != nil {
-						log.Print("error: ", err)
-					}
-					_, err = proc.Wait()
-					if err != nil {
-						log.Print("error: ", err)
-					}
-					runApp()
-				}
+				lastEvent = event
+				restartProc()
 				break
 			}
 		}
