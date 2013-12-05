@@ -123,12 +123,7 @@ func runInotify() {
 		log.Fatal("error initializing Inotify: ", err)
 		return
 	}
-	//_, err = syscall.InotifyAddWatch(fd, path, syscall.IN_MODIFY | syscall.IN_CLOSE_WRITE | syscall.IN_DELETE | syscall.IN_CREATE)
-	_, err = syscall.InotifyAddWatch(fd, path, syscall.IN_ALL_EVENTS)
-	if err != nil {
-		log.Fatal("error adding watch: ", err)
-		return
-	}
+	addFilesToInotify(fd, path)
 
 	var buffer []byte = make([]byte, 1024 * EVENT_SIZE)
 
@@ -139,6 +134,34 @@ func runInotify() {
 			return
 		}
 		processBuffer(n, buffer)
+	}
+}
+
+func addFilesToInotify(fd int, dirPath string) {
+	dir, err := os.Stat(dirPath)
+	if err != nil {
+		log.Fatal("error getting info on dir: ", err)
+		return
+	}
+	if dir.IsDir() && dir.Name() != ".git" {
+		log.Print("adding: ", dirPath)
+		_, err = syscall.InotifyAddWatch(fd, dirPath, syscall.IN_CLOSE_WRITE | syscall.IN_DELETE)
+		if err != nil {
+			log.Fatal("error adding watch: ", err)
+			return
+		}
+
+		fileList, err := ioutil.ReadDir(dirPath)
+		if err != nil {
+			log.Fatal("error reading dir: ", err)
+			return
+		}
+		for _,file := range fileList {
+			newPath := dirPath + "/" + file.Name()
+			if file.IsDir() && file.Name() != ".git" {
+				addFilesToInotify(fd, newPath)
+			} 
+		}
 	}
 }
 
