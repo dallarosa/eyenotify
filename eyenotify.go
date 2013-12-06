@@ -185,7 +185,6 @@ func addFilesToPoll(filePath string) {
 		for _,file := range fileList {
 			newPath := filePath + "/" + file.Name()
 			if file.IsDir() && file.Name() != ".git" {
-				pollList[newPath] = polledFile{path:newPath, modTime:file.ModTime()}
 				addFilesToPoll(newPath)
 			} else {
 				fileName := file.Name()
