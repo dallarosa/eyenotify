@@ -192,7 +192,6 @@ func addFilesToPoll(filePath string) {
 					fileExt := strings.Split(fileName,".")[1]
 					if(fileExt == ext){
 						pollList[newPath] = polledFile{path:newPath, modTime:file.ModTime()}
-						log.Print(fileName, " - ", file.ModTime())
 					}
 				}
 			}
