@@ -210,7 +210,7 @@ func runPolling() {
 				log.Fatal("Stat error: ", err)
 			}
 			if pollFile.modTime.Before(fileInfo.ModTime()) {
-				log.Print(path, " was modified")
+				restartProc()
 			}
 			pollList[path] = polledFile{path: path, modTime:fileInfo.ModTime()}
 //			log.Print(file, " - ",  modTime)
