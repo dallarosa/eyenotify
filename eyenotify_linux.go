@@ -17,6 +17,9 @@ const (
 	EVENT_SIZE = 16
 )
 
+//syscall has its own inotify event struct
+//but I'm keeping this one just for the sake of having that string there.
+//However I guess this could be eliminated later
 type inotifyEvent struct {
 	wd     int32
 	mask   int32
@@ -25,20 +28,22 @@ type inotifyEvent struct {
 	name   string
 }
 
+//struct to hold the information on files being polled.
+//for now we keep the minimum information necessary for the job.
 type polledFile struct {
 	path    string
 	modTime time.Time
 }
 
 var (
-	path      string
-	command   string
-	ext       string
-	pid       int
-	polling   bool
-	lastEvent *inotifyEvent
-	pollList  map[string]polledFile
-	ignoreDir map[string]bool
+	path      string                //path to be watched
+	command   string                //command to be run
+	ext       string                //file extension to be watched. right now only supporting one.
+	pid       int                   //pid of the process being run
+	polling   bool                  // should we poll or not
+	lastEvent *inotifyEvent         //keeping track of the last event. this is only useful for the vim problem
+	pollList  map[string]polledFile //list of files to poll
+	ignoreDir map[string]bool       //list of directories to ignore. not really working now
 )
 
 func init() {
@@ -59,7 +64,9 @@ func intFromByte(byteSlice []byte, data interface{}) {
 	}
 }
 
-func runApp() {
+//Starts the process specified in the command line
+//keeps track of the process pid for restart
+func startProc() {
 	log.Print("Starting Process...")
 	commandArray := strings.Split(command, " ")
 	paramArray := commandArray[1:]
@@ -72,11 +79,14 @@ func runApp() {
 	pid = cmd.Process.Pid
 }
 
+//Restart the process with pid value in the global variable pid
+//If it cannot find the process to kill assume the process is
+//already dead and start a new instance
 func restartProc() {
 	log.Print("Killing Process:  ", pid)
 	if proc, err := os.FindProcess(pid); err != nil {
 		log.Print("error: ", err)
-		runApp()
+		startProc()
 	} else {
 		err := proc.Kill()
 		if err != nil {
@@ -86,12 +96,11 @@ func restartProc() {
 		if err != nil {
 			log.Print("error: ", err)
 		}
-		runApp()
+		startProc()
 	}
 }
 
-//vim test:
-
+//Process the buffer from an inotify event.
 func processBuffer(n int, buffer []byte) {
 	event := new(inotifyEvent)
 	var i int32
@@ -109,16 +118,16 @@ func processBuffer(n int, buffer []byte) {
 			eventExt := strings.Split(event.name, ".")[1]
 			log.Print(ext, " - ", eventExt)
 			if ext == eventExt {
-				log.Print("I entered the if")
-				if lastEvent != nil {
-					log.Print(event.name, " - ", lastEvent.name)
-					log.Print(event.mask, " - ", lastEvent.mask)
-				} else {
-					log.Print(event.name)
-					log.Print(event.mask)
-				}
+				//TODO
+				//vim test: This should be done only if some "vim" flag is specified.
+				//Some background:
+				//=================
+				//Editors like Vim instead of saving the updated contents to the existing
+				//file, it creates a temp file (normally named "4093"), removes the existing
+				//file and renames the temp file to be the new file. This creates a bunch
+				//of unnecessary events that get the file tracking crazy.
+				//This check guarantees that we won't restart the process twice for the vim case
 				if lastEvent != nil && lastEvent.name == event.name && lastEvent.mask == syscall.IN_DELETE && event.mask == syscall.IN_CLOSE_WRITE {
-					log.Print("Skipping as we already processed events for file: ", event.name)
 					break
 				}
 				lastEvent = event
@@ -129,6 +138,7 @@ func processBuffer(n int, buffer []byte) {
 	}
 }
 
+//starts inotify tracking
 func runInotify() {
 	fd, err := syscall.InotifyInit()
 	if err != nil {
@@ -149,6 +159,7 @@ func runInotify() {
 	}
 }
 
+//Add directories recursively to the tracking list
 func addFilesToInotify(fd int, dirPath string) {
 	dir, err := os.Stat(dirPath)
 	if err != nil {
@@ -177,6 +188,7 @@ func addFilesToInotify(fd int, dirPath string) {
 	}
 }
 
+//Add files and directories to the polling list
 func addFilesToPoll(filePath string) {
 	fileList, err := ioutil.ReadDir(filePath)
 	if err != nil {
@@ -200,6 +212,7 @@ func addFilesToPoll(filePath string) {
 	}
 }
 
+//starts poll-based tracking
 func runPolling() {
 	pollList = make(map[string]polledFile)
 	addFilesToPoll(path)
@@ -220,7 +233,7 @@ func runPolling() {
 }
 
 func main() {
-	runApp()
+	startProc()
 	if polling {
 		runPolling()
 	} else {
