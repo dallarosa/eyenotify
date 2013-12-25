@@ -29,6 +29,26 @@ Last but not least, I wanted to make something significant in Go.
 This is no 10k lines of code but it was interesting dealing with system calls,
 handling binary data and system processes using Go.
 
+Installing
+----------
+
+#### Using go get:
+`go get -u github.com/dallarosa/eyenotify`
+
+#### Building from source:
+
+1. Clone this repository
+2. build using `go build`
+
+Supported platforms
+-------------------
+
+Right now, the only supported platforms are Linux and Mac OSX (Darwin).
+It's in my plans to support Linux, and BSD-like platforms using inotify
+and Kqueue and whatever else with polling. Maybe there will be better
+ideas in the future.
+
+
 TODO
 ----
 
