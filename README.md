@@ -40,6 +40,22 @@ Installing
 1. Clone this repository
 2. build using `go build`
 
+Usage
+-----
+
+Usage of eyenotify:
+  -command="echo": path to be watched
+  -ext="go": extension to be watched
+  -p=false: use polling
+  -polling=false: use polling
+  -watch=".": path to be watched
+
+Try
+
+`eyenotify --help`
+
+for the above very concise explanation on the possible options
+
 Supported platforms
 -------------------
 
