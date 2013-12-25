@@ -226,7 +226,6 @@ func runPolling() {
 				restartProc()
 			}
 			pollList[path] = polledFile{path: path, modTime: fileInfo.ModTime()}
-			//			log.Print(file, " - ",  modTime)
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
