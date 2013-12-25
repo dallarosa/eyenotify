@@ -1,15 +1,15 @@
 package main
 
 import (
-	"syscall"
 	"bytes"
 	"encoding/binary"
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"io/ioutil"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -18,26 +18,26 @@ const (
 )
 
 type inotifyEvent struct {
-	wd int32
-	mask int32
+	wd     int32
+	mask   int32
 	cookie int32
 	length int32
-	name string
+	name   string
 }
 
 type polledFile struct {
-	path string
+	path    string
 	modTime time.Time
 }
 
 var (
-	path string
-	command string
-	ext string
-	pid int
-	polling bool
+	path      string
+	command   string
+	ext       string
+	pid       int
+	polling   bool
 	lastEvent *inotifyEvent
-	pollList map[string] polledFile
+	pollList  map[string]polledFile
 	ignoreDir map[string]bool
 )
 
@@ -48,11 +48,11 @@ func init() {
 	flag.BoolVar(&polling, "polling", false, "use polling")
 	flag.BoolVar(&polling, "p", false, "use polling")
 	flag.Parse()
-	ignoreDir := make(map[string]bool,256)
-	ignoreDir[".git"] = true 
+	ignoreDir := make(map[string]bool, 256)
+	ignoreDir[".git"] = true
 }
 
-func intFromByte(byteSlice []byte, data interface{} ) {
+func intFromByte(byteSlice []byte, data interface{}) {
 	err := binary.Read(bytes.NewBuffer(byteSlice), binary.LittleEndian, data)
 	if err != nil {
 		log.Fatal("binary.read failed: ", err)
@@ -68,16 +68,16 @@ func runApp() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print("Process Started Successfuly: ",cmd.Process.Pid)
+	log.Print("Process Started Successfuly: ", cmd.Process.Pid)
 	pid = cmd.Process.Pid
 }
 
 func restartProc() {
-	log.Print("Killing Process:  ",pid)
+	log.Print("Killing Process:  ", pid)
 	if proc, err := os.FindProcess(pid); err != nil {
-		log.Print("error: ",err)
+		log.Print("error: ", err)
 		runApp()
-	}else{
+	} else {
 		err := proc.Kill()
 		if err != nil {
 			log.Print("error: ", err)
@@ -90,34 +90,34 @@ func restartProc() {
 	}
 }
 
-//vim test: 
+//vim test:
 
 func processBuffer(n int, buffer []byte) {
 	event := new(inotifyEvent)
-	var  i int32
+	var i int32
 
 	for i < int32(n) {
-		intFromByte(buffer[i: i + 4], &event.wd)
-		intFromByte(buffer[i+ 4: i + 8], &event.mask)
-		intFromByte(buffer[i + 8: i + 12], &event.cookie)
-		intFromByte(buffer[i + 12: i + 16], &event.length)
-		event.name =string(buffer[i + 16: i + 16 + event.length])
+		intFromByte(buffer[i:i+4], &event.wd)
+		intFromByte(buffer[i+4:i+8], &event.mask)
+		intFromByte(buffer[i+8:i+12], &event.cookie)
+		intFromByte(buffer[i+12:i+16], &event.length)
+		event.name = string(buffer[i+16 : i+16+event.length])
 		event.name = strings.TrimRight(event.name, "\x00")
 		i += EVENT_SIZE + event.length
 
-		if(len(strings.Split(event.name,".")) > 1) {
-			eventExt := strings.Split(event.name,".")[1]
+		if len(strings.Split(event.name, ".")) > 1 {
+			eventExt := strings.Split(event.name, ".")[1]
 			log.Print(ext, " - ", eventExt)
-			if(ext == eventExt){
+			if ext == eventExt {
 				log.Print("I entered the if")
 				if lastEvent != nil {
 					log.Print(event.name, " - ", lastEvent.name)
 					log.Print(event.mask, " - ", lastEvent.mask)
-				}else {
+				} else {
 					log.Print(event.name)
 					log.Print(event.mask)
 				}
-				if lastEvent != nil && lastEvent.name == event.name && lastEvent.mask == syscall.IN_DELETE && event.mask == syscall.IN_CLOSE_WRITE{
+				if lastEvent != nil && lastEvent.name == event.name && lastEvent.mask == syscall.IN_DELETE && event.mask == syscall.IN_CLOSE_WRITE {
 					log.Print("Skipping as we already processed events for file: ", event.name)
 					break
 				}
@@ -126,7 +126,7 @@ func processBuffer(n int, buffer []byte) {
 				break
 			}
 		}
-	}	
+	}
 }
 
 func runInotify() {
@@ -137,7 +137,7 @@ func runInotify() {
 	}
 	addFilesToInotify(fd, path)
 
-	var buffer []byte = make([]byte, 1024 * EVENT_SIZE)
+	var buffer []byte = make([]byte, 1024*EVENT_SIZE)
 
 	for {
 		n, err := syscall.Read(fd, buffer)
@@ -157,7 +157,7 @@ func addFilesToInotify(fd int, dirPath string) {
 	}
 	if dir.IsDir() && dir.Name() != ".git" {
 		log.Print("adding: ", dirPath)
-		_, err = syscall.InotifyAddWatch(fd, dirPath, syscall.IN_CLOSE_WRITE | syscall.IN_DELETE)
+		_, err = syscall.InotifyAddWatch(fd, dirPath, syscall.IN_CLOSE_WRITE|syscall.IN_DELETE)
 		if err != nil {
 			log.Fatal("error adding watch: ", err)
 			return
@@ -168,41 +168,43 @@ func addFilesToInotify(fd int, dirPath string) {
 			log.Fatal("error reading dir: ", err)
 			return
 		}
-		for _,file := range fileList {
+		for _, file := range fileList {
 			newPath := dirPath + "/" + file.Name()
 			if file.IsDir() && file.Name() != ".git" {
 				addFilesToInotify(fd, newPath)
-			} 
+			}
 		}
 	}
 }
 
 func addFilesToPoll(filePath string) {
-		fileList, err := ioutil.ReadDir(filePath)
-		if err != nil {
-			log.Fatal("ReadDir failed: ", err)
-		}
-		for _,file := range fileList {
-			newPath := filePath + "/" + file.Name()
-			if file.IsDir() && file.Name() != ".git" {
-				addFilesToPoll(newPath)
-			} else {
-				fileName := file.Name()
-				if(len(strings.Split(fileName,".")) > 1) {
-					fileExt := strings.Split(fileName,".")[1]
-					if(fileExt == ext){
-						pollList[newPath] = polledFile{path:newPath, modTime:file.ModTime()}
-					}
+	fileList, err := ioutil.ReadDir(filePath)
+	if err != nil {
+		log.Fatal("ReadDir failed: ", err)
+	}
+	for _, file := range fileList {
+		newPath := filePath + "/" + file.Name()
+		if file.IsDir() && file.Name() != ".git" {
+			pollList[newPath] = polledFile{path: newPath, modTime: file.ModTime()}
+			addFilesToPoll(newPath)
+		} else {
+			fileName := file.Name()
+			if len(strings.Split(fileName, ".")) > 1 {
+				fileExt := strings.Split(fileName, ".")[1]
+				if fileExt == ext {
+					pollList[newPath] = polledFile{path: newPath, modTime: file.ModTime()}
+					log.Print(fileName, " - ", file.ModTime())
 				}
 			}
 		}
+	}
 }
 
 func runPolling() {
-	pollList = make(map[string] polledFile)
+	pollList = make(map[string]polledFile)
 	addFilesToPoll(path)
-	for{
-		for path,pollFile := range pollList {
+	for {
+		for path, pollFile := range pollList {
 			fileInfo, err := os.Stat(path)
 			if err != nil {
 				log.Fatal("Stat error: ", err)
@@ -210,11 +212,11 @@ func runPolling() {
 			if pollFile.modTime.Before(fileInfo.ModTime()) {
 				restartProc()
 			}
-			pollList[path] = polledFile{path: path, modTime:fileInfo.ModTime()}
-//			log.Print(file, " - ",  modTime)
+			pollList[path] = polledFile{path: path, modTime: fileInfo.ModTime()}
+			//			log.Print(file, " - ",  modTime)
 		}
-		time.Sleep(200*time.Millisecond)
-	}	
+		time.Sleep(200 * time.Millisecond)
+	}
 }
 
 func main() {
