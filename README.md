@@ -44,7 +44,7 @@ Usage
 -----
 
      Usage of eyenotify:
-      -command="echo": path to be watched
+      -command="echo": process to be run
       -ext="go": extension to be watched
       -p=false: use polling
       -polling=false: use polling
