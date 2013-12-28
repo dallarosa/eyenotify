@@ -26,7 +26,7 @@ type inotifyEvent struct {
 }
 
 var (
-	lastEvent *inotifyEvent         //keeping track of the last event. this is only useful for the vim problem
+	lastEvent *inotifyEvent //keeping track of the last event. this is only useful for the vim problem
 )
 
 func intFromByte(byteSlice []byte, data interface{}) {
@@ -35,7 +35,6 @@ func intFromByte(byteSlice []byte, data interface{}) {
 		log.Fatal("binary.read failed: ", err)
 	}
 }
-
 
 //Process the buffer from an inotify event.
 func processBuffer(n int, buffer []byte) {
@@ -124,7 +123,6 @@ func addFilesToInotify(fd int, dirPath string) {
 		}
 	}
 }
-
 
 func main() {
 	startProc()
