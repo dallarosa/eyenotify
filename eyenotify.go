@@ -1,13 +1,13 @@
 package main
 
 import (
-  "flag"
-	"time"
-  "log"
-  "strings"
-  "os/exec"
+	"flag"
 	"io/ioutil"
-  "os"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
 )
 
 var (
