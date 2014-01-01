@@ -14,7 +14,7 @@ func processEvent() {
 
 func runKqueue() {
 	fd, err := syscall.Kqueue()
-	evTrackList := make([]syscall.Kevent_t, 1024)
+	evTrackList := make([]syscall.Kevent_t, 0)
 	if err != nil {
 		log.Fatal("error initializing Kqueue: ", err)
 		return
