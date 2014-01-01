@@ -3,10 +3,9 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os"
+	"runtime/debug"
 	"strings"
 	"syscall"
-	"time"
 )
 
 func processEvent() {
@@ -35,7 +34,8 @@ func runKqueue() {
 		events := make([]syscall.Kevent_t, 10)
 		_, err := syscall.Kevent(fd, evTrackList, events, &timeout)
 		if err != nil {
-			log.Println("Error creating kevent")
+			debug.PrintStack()
+			log.Fatal("Error creating kevent: ", err)
 		}
 		// check if there was an event and process it
 		if len(events) > 0 && events[0].Ident > 0 {
