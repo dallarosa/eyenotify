@@ -71,10 +71,11 @@ TODO
 * Tracking file creation and deletion
   - Right now we're only tracking changes in existing files.
   - Hoping to do this during the holidays
-* Test the Mac OSX version
-  - I've implemented and compiled the OSX version using a cross-compiler
-  - Gotta get this running on a Mac and do proper testing
-  - Definitely doing this during the holidays 
+* Get the Mac OSX version working
+  - After actually running the code on a Mac, I found out the Kqueue version is not working (polling is ok)
+  - Currently working on this is should have it fixed in the next few days
+* Consider leaving Kqueue for BSD systems and use FSEvents for Mac OSX
+  - FSEvents are like inotify for the Mac. However there's nothing in go supporting them yet (AFAIK)
 * Write tests for the code
   - This one is also a must
 * Intelligent Polling
@@ -82,5 +83,7 @@ TODO
   - I'll look more deeply into this one once I get the above worked out
 * Refactor the code
   - I created an unnecessary inotifyevent when syscall provides me with one.
+  - unifying the calls for the OS-based methods.
+  - Lots of other stuff
 * Get the ignore list properly working
   - Right now I'm ignoring .git with hardcoded rules but that should be handled properly
