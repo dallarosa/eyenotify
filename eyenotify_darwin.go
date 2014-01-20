@@ -23,13 +23,7 @@ func runKqueue() {
 
 	addFilesToKqueue(&evTrackList, path)
 
-	// configure timeout
-	//	timeout := syscall.Timespec{
-	//		Sec:  60,
-	//		Nsec: 0,
-	//	}
-	events := []syscall.Kevent_t{}
-	log.Print(evTrackList)
+	events := make([]syscall.Kevent_t, 10)
 
 	// wait for events
 	for {
@@ -40,7 +34,7 @@ func runKqueue() {
 		//		log.Print(events)
 		if err != nil {
 			debug.PrintStack()
-			log.Fatal("Error creating kevent: ", err)
+			log.Print("Error creating kevent: ", err)
 		}
 		// check if there was an event and process it
 		if len(events) > 0 && events[0].Ident > 0 {
