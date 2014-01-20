@@ -28,10 +28,11 @@ func runKqueue() {
 	// wait for events
 	for {
 		// create kevent
-
-		_, err := syscall.Kevent(kq, evTrackList, events, nil)
-		//		log.Print("I should be blocking")
-		//		log.Print(events)
+		log.Print("I should be blocking")
+		log.Print("evTrackList", evTrackList)
+		n, err := syscall.Kevent(kq, evTrackList, events, nil)
+		log.Print("n: ", n)
+		log.Print("events: ", events)
 		if err != nil {
 			debug.PrintStack()
 			log.Print("Error creating kevent: ", err)
